@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Init Planner</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+  <style>
+    /* ===== RESET & BASE ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a202c;
+      line-height: 1.6;
+    }
+
+    /* ===== HEADER ===== */
+    .app-header {
+      background: white;
+      padding: 14px 24px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .app-header h1 { font-size: 1.4rem; color: #2d3748; }
+    .complexity-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: #4a5568;
+      font-weight: 600;
+    }
+    .complexity-track {
+      width: 180px; height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .complexity-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #4299e1, #3b5ca8);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    /* ===== LAYOUT ===== */
+    .main {
+      display: grid;
+      grid-template-columns: 310px 1fr 310px;
+      gap: 20px;
+      padding: 20px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+    @media (max-width: 1200px) {
+      .main { grid-template-columns: 1fr 1fr; }
+      .right-panel { grid-column: 1 / -1; }
+    }
+    @media (max-width: 768px) {
+      .main { grid-template-columns: 1fr; }
+    }
+
+    /* ===== PANEL CARD ===== */
+    .panel {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      border: 1px solid #e2e8f0;
+    }
+    .panel h2 {
+      font-size: 1.2rem;
+      margin-bottom: 18px;
+      color: #1a202c;
+    }
+
+    /* ===== FORM ===== */
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.88rem;
+      margin-bottom: 5px;
+    }
+    .form-group input[type="text"],
+    .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s;
+      background: white;
+      color: #374151;
+    }
+    .form-group input[type="text"]:focus,
+    .form-group select:focus {
+      border-color: #4299e1;
+      box-shadow: 0 0 0 3px rgba(66,153,225,0.15);
+    }
+
+    /* ===== SLIDERS ===== */
+    .slider-group { margin-bottom: 12px; }
+    .slider-label {
+      font-weight: 600;
+      font-size: 0.88rem;
+      margin-bottom: 2px;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .range-label {
+      font-size: 0.7rem;
+      color: #718096;
+      white-space: nowrap;
+      min-width: 68px;
+    }
+    .range-label:last-of-type { text-align: right; }
+
+    input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+      background: #cbd5e0;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #3b5ca8;
+      border: 2.5px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #3b5ca8;
+      border: 2.5px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+
+    .slider-val {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: #2d3a5c;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+    .btn-primary  { background: #3b5ca8; color: #fff; }
+    .btn-primary:hover  { background: #2f4e96; }
+    .btn-secondary { background: #fff; color: #4a5568; border: 1px solid #cbd5e0; }
+    .btn-secondary:hover { background: #f7fafc; }
+    .btn-success  { background: #38a169; color: #fff; }
+    .btn-success:hover  { background: #2f855a; }
+    .btn-danger   { background: #c53030; color: #fff; }
+    .btn-danger:hover   { background: #9b2c2c; }
+    .btn-dark     { background: #2d3748; color: #fff; }
+    .btn-dark:hover     { background: #1a202c; }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .btn-col { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+
+    /* ===== CHART ===== */
+    .chart-wrap { position: relative; width: 100%; }
+    .chart-wrap canvas { width: 100% !important; }
+    .legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+      margin-bottom: 10px;
+      font-size: 0.8rem;
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .legend-note { color: #a0aec0; font-style: italic; font-size: 0.78rem; }
+    .export-row { text-align: right; margin-top: 12px; }
+    .export-row .btn { width: auto; padding: 10px 20px; }
+
+    /* ===== RIGHT PANEL ===== */
+    .instructions { font-size: 0.88rem; color: #4a5568; margin-bottom: 18px; }
+    .section-title {
+      font-size: 0.95rem; font-weight: 700;
+      margin: 18px 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .quad-def { margin-bottom: 8px; font-size: 0.84rem; color: #4a5568; }
+    .badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.78rem;
+      margin-right: 4px;
+    }
+    .badge-qw { background: #c6f6d5; color: #22543d; }
+    .badge-sb { background: #bee3f8; color: #2a4365; }
+    .badge-fi { background: #fefcbf; color: #975a16; }
+    .badge-kl { background: #fed7d7; color: #742a2a; }
+
+    .criteria-list { padding-left: 20px; font-size: 0.84rem; color: #4a5568; }
+    .criteria-list li { margin-bottom: 3px; }
+    .fit-info { font-size: 0.84rem; color: #4a5568; }
+    .csv-format {
+      font-family: 'Courier New', monospace;
+      background: #f7fafc;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      border: 1px solid #e2e8f0;
+      margin-top: 4px;
+    }
+
+    /* ===== TABLE ===== */
+    .init-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .init-table th {
+      text-align: left;
+      padding: 8px 6px;
+      border-bottom: 2px solid #e2e8f0;
+      font-weight: 700;
+    }
+    .init-table td {
+      padding: 7px 6px;
+      border-bottom: 1px solid #f0f0f0;
+      color: #4a5568;
+    }
+    .init-table tr:hover td { background: #f7fafc; }
+    .del-btn {
+      background: none; border: none;
+      color: #e53e3e; cursor: pointer;
+      font-size: 1.15rem; padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .del-btn:hover { background: #fff5f5; }
+    .no-data {
+      text-align: center;
+      color: #a0aec0;
+      padding: 24px 10px;
+      font-style: italic;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- ==================== HEADER ==================== -->
+<header class="app-header">
+  <h1>🎯 Init Planner</h1>
+  <div class="complexity-wrap">
+    <span>Organizational Complexity Load</span>
+    <div class="complexity-track">
+      <div class="complexity-fill" id="cFill"></div>
+    </div>
+    <span id="cPct">0%</span>
+  </div>
+</header>
+
+<!-- ==================== MAIN GRID ==================== -->
+<div class="main">
+
+  <!-- ========== LEFT: FORM ========== -->
+  <div class="panel">
+    <h2>Initiative Entry</h2>
+
+    <div class="form-group">
+      <label for="projName">Project Name</label>
+      <input type="text" id="projName" placeholder="e.g. Prospective Student Automation">
+    </div>
+
+    <div class="form-group">
+      <label for="stage">Scenario Stage</label>
+      <select id="stage">
+        <option>Future State</option>
+        <option>Current State</option>
+        <option>Proposed</option>
+        <option>In Progress</option>
+      </select>
+    </div>
+
+    <!-- Sliders -->
+    <div class="slider-group">
+      <div class="slider-label">Time to Value</div>
+      <div class="slider-row">
+        <span class="range-label">1 (Slow)</span>
+        <input type="range" id="sTV" min="1" max="10" value="5">
+        <span class="range-label">10 (Fast/Now)</span>
+        <span class="slider-val" id="vTV">5</span>
+      </div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-label">Simplicity</div>
+      <div class="slider-row">
+        <span class="range-label">1 (Complex)</span>
+        <input type="range" id="sSI" min="1" max="10" value="5">
+        <span class="range-label">10 (Simple/Easy)</span>
+        <span class="slider-val" id="vSI">5</span>
+      </div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-label">Mission Return</div>
+      <div class="slider-row">
+        <span class="range-label">1 (Low Impact)</span>
+        <input type="range" id="sMR" min="1" max="10" value="5">
+        <span class="range-label">10 (High Impact)</span>
+        <span class="slider-val" id="vMR">5</span>
+      </div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-label">Low Cost</div>
+      <div class="slider-row">
+        <span class="range-label">1 (Expensive)</span>
+        <input type="range" id="sLC" min="1" max="10" value="5">
+        <span class="range-label">10 (Inexpensive)</span>
+        <span class="slider-val" id="vLC">5</span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="addInit()">+ Add Initiative</button>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="undoLast()">← Undo Last</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('csvIn').click()">⬇ Import CSV</button>
+      <input type="file" id="csvIn" class="hidden" accept=".csv" onchange="importCSV(event)">
+    </div>
+  </div>
+
+  <!-- ========== CENTER: CHART ========== -->
+  <div class="panel">
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:#4caf50"></div>Quick Wins</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4285f4"></div>Strategic Bets</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffb74d"></div>Fill-Ins</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f44336"></div>Kill List</div>
+      <span class="legend-note">Circle size = FIT Score</span>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="qChart"></canvas>
+    </div>
+    <div class="export-row">
+      <button class="btn btn-dark" onclick="exportPNG()">📷 Export Chart as PNG Image</button>
+    </div>
+  </div>
+
+  <!-- ========== RIGHT: INFO + TABLE ========== -->
+  <div class="panel right-panel">
+    <p class="instructions">
+      Enter each initiative, set its stage and criteria scores, then click
+      <strong>Add Initiative</strong>. Points appear on the quadrant chart.
+    </p>
+
+    <div class="section-title">Quadrant Definitions</div>
+    <div class="quad-def">
+      <span class="badge badge-qw">Quick Wins</span>
+      High impact + High simplicity — Do these first.
+    </div>
+    <div class="quad-def">
+      <span class="badge badge-sb">Strategic Bets</span>
+      High impact + Low simplicity — Worth the effort.
+    </div>
+    <div class="quad-def">
+      <span class="badge badge-fi">Fill-Ins</span>
+      Low impact + High simplicity — Do when capacity allows.
+    </div>
+    <div class="quad-def">
+      <span class="badge badge-kl">Kill List</span>
+      Low impact + Low simplicity — Avoid or deprioritize.
+    </div>
+
+    <div class="section-title">Scoring Criteria (1–10)</div>
+    <ul class="criteria-list">
+      <li><strong>Time to Value:</strong> How quickly will this deliver results?</li>
+      <li><strong>Simplicity:</strong> How easy is it to implement?</li>
+      <li><strong>Mission Return:</strong> How aligned is it with strategic goals?</li>
+      <li><strong>Low Cost:</strong> How affordable is it?</li>
+    </ul>
+
+    <div class="section-title" style="color:#3b5ca8">FIT Score</div>
+    <p class="fit-info">Average of all four criteria (1–10). Higher = better overall fit.</p>
+
+    <div class="section-title">CSV Import Format</div>
+    <p class="fit-info">Columns:</p>
+    <div class="csv-format">Name, Scenario Stage, Time to Value, Simplicity, Mission Return, Low Cost</div>
+
+    <div class="btn-col">
+      <button class="btn btn-success" onclick="downloadCSV()">⬇ Download Data CSV</button>
+      <button class="btn btn-danger" onclick="clearAll()">🗑 Clear All Initiatives</button>
+    </div>
+
+    <div style="margin-top:20px">
+      <div class="section-title">Initiatives</div>
+      <table class="init-table">
+        <thead>
+          <tr><th>Name</th><th>Stage</th><th>FIT</th><th>Quadrant</th><th></th></tr>
+        </thead>
+        <tbody id="tBody">
+          <tr><td colspan="5" class="no-data">No initiatives added yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+/* ---------- STATE ---------- */
+let inits = JSON.parse(localStorage.getItem('ip_data') || '[]');
+let chart;
+
+/* ---------- HELPERS ---------- */
+const $ = id => document.getElementById(id);
+const esc = t => { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+
+function quadrant(si, mr) {
+  if (si > 5.5 && mr > 5.5) return 'Quick Wins';
+  if (si <= 5.5 && mr > 5.5) return 'Strategic Bets';
+  if (si > 5.5 && mr <= 5.5) return 'Fill-Ins';
+  return 'Kill List';
+}
+function fitScore(tv, si, mr, lc) {
+  return +((tv + si + mr + lc) / 4).toFixed(1);
+}
+function save() {
+  localStorage.setItem('ip_data', JSON.stringify(inits));
+}
+
+/* ---------- SLIDER WIRING ---------- */
+const sliders = [
+  { range: 'sTV', display: 'vTV' },
+  { range: 'sSI', display: 'vSI' },
+  { range: 'sMR', display: 'vMR' },
+  { range: 'sLC', display: 'vLC' }
+];
+sliders.forEach(s => {
+  const el = $(s.range);
+  const sync = () => {
+    $(s.display).textContent = el.value;
+    const pct = ((el.value - 1) / 9) * 100;
+    el.style.background =
+      `linear-gradient(to right,#3b5ca8 0%,#3b5ca8 ${pct}%,#cbd5e0 ${pct}%,#cbd5e0 100%)`;
+  };
+  el.addEventListener('input', sync);
+  sync();
+});
+
+/* ---------- CRUD ---------- */
+function addInit() {
+  const name = $('projName').value.trim();
+  if (!name) return alert('Please enter a project name.');
+  const o = {
+    name,
+    stage: $('stage').value,
+    tv: +$('sTV').value,
+    si: +$('sSI').value,
+    mr: +$('sMR').value,
+    lc: +$('sLC').value
+  };
+  o.fit = fitScore(o.tv, o.si, o.mr, o.lc);
+  o.quad = quadrant(o.si, o.mr);
+  inits.push(o);
+  $('projName').value = '';
+  sliders.forEach(s => { $(s.range).value = 5; $(s.range).dispatchEvent(new Event('input')); });
+  refresh();
+}
+
+function undoLast() { if (!inits.length) return; inits.pop(); refresh(); }
+function removeInit(i) { inits.splice(i, 1); refresh(); }
+function clearAll() {
+  if (!inits.length) return;
+  if (confirm('Clear all initiatives?')) { inits = []; refresh(); }
+}
+
+/* ---------- REFRESH ---------- */
+function refresh() {
+  save();
+  updateTable();
+  updateChart();
+  updateLoad();
+}
+
+function updateLoad() {
+  let load = 0;
+  if (inits.length) {
+    const total = inits.reduce((s, i) => s + (11 - i.si), 0);
+    load = Math.min(100, Math.round(total / 100 * 100));
+  }
+  $('cFill').style.width = load + '%';
+  $('cPct').textContent = load + '%';
+}
+
+function updateTable() {
+  const tb = $('tBody');
+  if (!inits.length) {
+    tb.innerHTML = '<tr><td colspan="5" class="no-data">No initiatives added yet.</td></tr>';
+    return;
+  }
+  tb.innerHTML = inits.map((o, i) => `
+    <tr>
+      <td>${esc(o.name)}</td>
+      <td>${o.stage}</td>
+      <td>${o.fit}</td>
+      <td>${o.quad}</td>
+      <td><button class="del-btn" onclick="removeInit(${i})" title="Remove">×</button></td>
+    </tr>`).join('');
+}
+
+/* ---------- CHART ---------- */
+const QUAD_COLORS = {
+  'Quick Wins':     { bg: 'rgba(76,175,80,0.7)',  border: '#4caf50' },
+  'Strategic Bets': { bg: 'rgba(66,133,244,0.7)',  border: '#4285f4' },
+  'Fill-Ins':       { bg: 'rgba(255,183,77,0.7)',  border: '#ffb74d' },
+  'Kill List':      { bg: 'rgba(244,67,54,0.7)',   border: '#f44336' }
+};
+
+const quadPlugin = {
+  id: 'quadBg',
+  beforeDraw(ch) {
+    const { ctx, chartArea: { left, top, right, bottom }, scales: { x, y } } = ch;
+    if (!left) return;
+    const mx = x.getPixelForValue(5.5), my = y.getPixelForValue(5.5);
+
+    // Quadrant fills
+    ctx.fillStyle = 'rgba(200,237,200,0.35)'; ctx.fillRect(mx, top, right-mx, my-top);
+    ctx.fillStyle = 'rgba(200,215,245,0.35)'; ctx.fillRect(left, top, mx-left, my-top);
+    ctx.fillStyle = 'rgba(255,235,205,0.35)'; ctx.fillRect(mx, my, right-mx, bottom-my);
+    ctx.fillStyle = 'rgba(255,215,215,0.35)'; ctx.fillRect(left, my, mx-left, bottom-my);
+
+    // Dashed dividers
+    ctx.save();
+    ctx.setLineDash([6, 4]);
+    ctx.strokeStyle = 'rgba(120,120,160,0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(left, my); ctx.lineTo(right, my); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mx, top); ctx.lineTo(mx, bottom); ctx.stroke();
+    ctx.restore();
+
+    // Labels
+    ctx.save();
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillStyle = 'rgba(160,160,180,0.55)';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('QUICK WINS',     (mx+right)/2, (top+my)/2);
+    ctx.fillText('STRATEGIC BETS', (left+mx)/2,  (top+my)/2);
+    ctx.fillText('FILL-INS',       (mx+right)/2, (my+bottom)/2);
+    ctx.fillText('KILL LIST',      (left+mx)/2,  (my+bottom)/2);
+    ctx.restore();
+  }
+};
+
+function initChart() {
+  chart = new Chart($('qChart').getContext('2d'), {
+    type: 'bubble',
+    data: { datasets: [] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 1,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const p = ctx.raw;
+              return `${p.name}: Simp ${p.x}, MR ${p.y}, FIT ${p.fit}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0, max: 11,
+          title: { display: true, text: 'Simplicity (10=Easiest)', font: { size: 13, weight: 'bold' } },
+          ticks: { stepSize: 1 },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        y: {
+          min: 0, max: 11,
+          title: { display: true, text: 'Mission Return (10=High Impact)', font: { size: 13, weight: 'bold' } },
+          ticks: { stepSize: 1 },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        }
+      }
+    },
+    plugins: [quadPlugin]
+  });
+}
+
+function updateChart() {
+  const buckets = {};
+  Object.keys(QUAD_COLORS).forEach(k => buckets[k] = []);
+  inits.forEach(o => {
+    buckets[o.quad].push({ x: o.si, y: o.mr, r: o.fit * 2 + 3, name: o.name, fit: o.fit });
+  });
+  chart.data.datasets = Object.entries(buckets).map(([label, data]) => ({
+    label,
+    data,
+    backgroundColor: QUAD_COLORS[label].bg,
+    borderColor: QUAD_COLORS[label].border,
+    borderWidth: 2
+  }));
+  chart.update();
+}
+
+function exportPNG() {
+  const a = document.createElement('a');
+  a.download = 'initiative-quadrant.png';
+  a.href = chart.canvas.toDataURL('image/png');
+  a.click();
+}
+
+/* ---------- CSV ---------- */
+function downloadCSV() {
+  if (!inits.length) return alert('No data to export.');
+  let csv = 'Name,Scenario Stage,Time to Value,Simplicity,Mission Return,Low Cost\n';
+  inits.forEach(o => {
+    csv += `"${o.name.replace(/"/g, '""')}","${o.stage}",${o.tv},${o.si},${o.mr},${o.lc}\n`;
+  });
+  const a = document.createElement('a');
+  a.download = 'initiatives.csv';
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.click();
+}
+
+function importCSV(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split('\n').filter(l => l.trim());
+    for (let i = 1; i < lines.length; i++) {
+      const p = parseCSV(lines[i]);
+      if (p.length >= 6) {
+        const o = {
+          name:  p[0].replace(/"/g,'').trim(),
+          stage: p[1].trim(),
+          tv: Math.min(10, Math.max(1, +p[2] || 5)),
+          si: Math.min(10, Math.max(1, +p[3] || 5)),
+          mr: Math.min(10, Math.max(1, +p[4] || 5)),
+          lc: Math.min(10, Math.max(1, +p[5] || 5))
+        };
+        o.fit = fitScore(o.tv, o.si, o.mr, o.lc);
+        o.quad = quadrant(o.si, o.mr);
+        inits.push(o);
+      }
+    }
+    refresh();
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+}
+
+function parseCSV(line) {
+  const r = []; let cur = '', inQ = false;
+  for (const ch of line) {
+    if (ch === '"') inQ = !inQ;
+    else if (ch === ',' && !inQ) { r.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  r.push(cur);
+  return r;
+}
+
+/* ---------- INIT ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+  initChart();
+  refresh();
+});
+</script>
+</body>
+</html>
