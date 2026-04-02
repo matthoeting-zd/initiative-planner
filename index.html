@@ -72,6 +72,7 @@
       padding: 24px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       border: 1px solid #e2e8f0;
+      overflow: hidden;
     }
     .panel h2 {
       font-size: 1.2rem;
@@ -121,7 +122,7 @@
       font-size: 0.7rem;
       color: #718096;
       white-space: nowrap;
-      min-width: 68px;
+      min-width: 50px;
     }
     .range-label:last-of-type { text-align: right; }
 
@@ -154,7 +155,8 @@
     }
 
     .slider-val {
-      width: 32px; height: 32px;
+      width: 28px; height: 28px;
+      min-width: 28px;
       border-radius: 50%;
       background: #2d3a5c;
       color: #fff;
