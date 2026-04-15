@@ -9,7 +9,7 @@
     /* ===== RESET & BASE ===== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', Inter, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #f0f2f5;
       color: #1a202c;
       line-height: 1.6;
@@ -72,7 +72,6 @@
       padding: 24px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.08);
       border: 1px solid #e2e8f0;
-      overflow: hidden;
     }
     .panel h2 {
       font-size: 1.2rem;
@@ -113,21 +112,16 @@
       font-size: 0.88rem;
       margin-bottom: 2px;
     }
-.slider-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 2px;
-}
     .slider-row {
       display: flex;
       align-items: center;
       gap: 6px;
     }
-   .range-label {
-  font-size: 0.65rem;
-  color: #718096;
-}
-
+    .range-label {
+      font-size: 0.7rem;
+      color: #718096;
+      white-space: nowrap;
+      min-width: 68px;
     }
     .range-label:last-of-type { text-align: right; }
 
@@ -160,8 +154,7 @@
     }
 
     .slider-val {
-      width: 28px; height: 28px;
-      min-width: 28px;
+      width: 32px; height: 32px;
       border-radius: 50%;
       background: #2d3a5c;
       color: #fff;
@@ -293,7 +286,7 @@
 
 <!-- ==================== HEADER ==================== -->
 <header class="app-header">
-  <h1>Init Planner</h1>
+  <h1>🎯 Init Planner</h1>
   <div class="complexity-wrap">
     <span>Organizational Complexity Load</span>
     <div class="complexity-track">
@@ -312,7 +305,7 @@
 
     <div class="form-group">
       <label for="projName">Project Name</label>
-      <input type="text" id="projName" placeholder="e.g. AI Agent CRM Integration">
+      <input type="text" id="projName" placeholder="e.g. Prospective Student Automation">
     </div>
 
     <div class="form-group">
@@ -328,53 +321,41 @@
     <!-- Sliders -->
     <div class="slider-group">
       <div class="slider-label">Time to Value</div>
-      <div class="slider-labels">
-  <span class="range-label">1 (Slow)</span>
-  <span class="range-label">10 (Fast/Now)</span>
-</div>
-<div class="slider-row">
-  <input type="range" id="sTV" min="1" max="10" value="5">
-  <span class="slider-val" id="vTV">5</span>
-</div>
+      <div class="slider-row">
+        <span class="range-label">1 (Slow)</span>
+        <input type="range" id="sTV" min="1" max="10" value="5">
+        <span class="range-label">10 (Fast/Now)</span>
+        <span class="slider-val" id="vTV">5</span>
       </div>
     </div>
 
     <div class="slider-group">
       <div class="slider-label">Simplicity</div>
- <div class="slider-labels">
-  <span class="range-label">1 (Slow)</span>
-  <span class="range-label">10 (Fast/Now)</span>
-</div>
-<div class="slider-row">
-  <input type="range" id="sTV" min="1" max="10" value="5">
-  <span class="slider-val" id="vTV">5</span>
-</div>
+      <div class="slider-row">
+        <span class="range-label">1 (Complex)</span>
+        <input type="range" id="sSI" min="1" max="10" value="5">
+        <span class="range-label">10 (Simple/Easy)</span>
+        <span class="slider-val" id="vSI">5</span>
       </div>
     </div>
 
     <div class="slider-group">
       <div class="slider-label">Mission Return</div>
-  <div class="slider-labels">
-  <span class="range-label">1 (Slow)</span>
-  <span class="range-label">10 (Fast/Now)</span>
-</div>
-<div class="slider-row">
-  <input type="range" id="sTV" min="1" max="10" value="5">
-  <span class="slider-val" id="vTV">5</span>
-</div>
+      <div class="slider-row">
+        <span class="range-label">1 (Low Impact)</span>
+        <input type="range" id="sMR" min="1" max="10" value="5">
+        <span class="range-label">10 (High Impact)</span>
+        <span class="slider-val" id="vMR">5</span>
       </div>
     </div>
 
     <div class="slider-group">
       <div class="slider-label">Low Cost</div>
-<div class="slider-labels">
-  <span class="range-label">1 (Slow)</span>
-  <span class="range-label">10 (Fast/Now)</span>
-</div>
-<div class="slider-row">
-  <input type="range" id="sTV" min="1" max="10" value="5">
-  <span class="slider-val" id="vTV">5</span>
-</div>
+      <div class="slider-row">
+        <span class="range-label">1 (Expensive)</span>
+        <input type="range" id="sLC" min="1" max="10" value="5">
+        <span class="range-label">10 (Inexpensive)</span>
+        <span class="slider-val" id="vLC">5</span>
       </div>
     </div>
 
@@ -399,7 +380,7 @@
       <canvas id="qChart"></canvas>
     </div>
     <div class="export-row">
-      <button class="btn btn-dark" onclick="exportPNG()">Export Chart as PNG Image</button>
+      <button class="btn btn-dark" onclick="exportPNG()">📷 Export Chart as PNG Image</button>
     </div>
   </div>
 
@@ -444,8 +425,8 @@
     <div class="csv-format">Name, Scenario Stage, Time to Value, Simplicity, Mission Return, Low Cost</div>
 
     <div class="btn-col">
-      <button class="btn btn-success" onclick="downloadCSV()">Download Data CSV</button>
-      <button class="btn btn-danger" onclick="clearAll()">Clear All Initiatives</button>
+      <button class="btn btn-success" onclick="downloadCSV()">⬇ Download Data CSV</button>
+      <button class="btn btn-danger" onclick="clearAll()">🗑 Clear All Initiatives</button>
     </div>
 
     <div style="margin-top:20px">
